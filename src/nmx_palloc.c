@@ -1,36 +1,36 @@
-#include "ngx_palloc.h"
+#include "nmx_palloc.h"
 
 
-size_t ngx_pagesize = 0;
+size_t nmx_pagesize = 0;
 
-//#define NGX_MAX_ALLOC_FROM_POOL  (ngx_pagesize - 1)
+//#define nmx_MAX_ALLOC_FROM_POOL  (nmx_pagesize - 1)
 
-#define NGX_MAX_ALLOC_FROM_POOL (ngx_pagesize == 0 ? (ngx_pagesize = getpagesize() -1) : (ngx_pagesize))
+#define NMX_MAX_ALLOC_FROM_POOL (nmx_pagesize == 0 ? (nmx_pagesize = getpagesize() -1) : (nmx_pagesize))
 
-#define NGX_POOL_ALIGNMENT       16
-
-
-static void *ngx_palloc_block(ngx_pool_t *pool, size_t size);
-static void *ngx_palloc_large(ngx_pool_t *pool, size_t size);
+#define NMX_POOL_ALIGNMENT       16
 
 
-ngx_pool_t *
-ngx_create_pool(size_t size)
+static void *nmx_palloc_block(nmx_pool_t *pool, size_t size);
+static void *nmx_palloc_large(nmx_pool_t *pool, size_t size);
+
+
+nmx_pool_t *
+nmx_create_pool(size_t size)
 {
-    ngx_pool_t  *p;
+    nmx_pool_t  *p;
 
-    p = ngx_memalign(NGX_POOL_ALIGNMENT, size);
+    p = nmx_memalign(NMX_POOL_ALIGNMENT, size);
     if (p == NULL) {
         return NULL;
     }
 
-    p->d.last = (u_char *) p + sizeof(ngx_pool_t);
-    p->d.end = (u_char *) p + size;
+    p->d.last = (unsigned char *) p + sizeof(nmx_pool_t);
+    p->d.end = (unsigned char *) p + size;
     p->d.next = NULL;
     p->d.failed = 0;
 
-    size = size - sizeof(ngx_pool_t);
-    p->max = (size < NGX_MAX_ALLOC_FROM_POOL) ? size : NGX_MAX_ALLOC_FROM_POOL;
+    size = size - sizeof(nmx_pool_t);
+    p->max = (size < NMX_MAX_ALLOC_FROM_POOL) ? size : NMX_MAX_ALLOC_FROM_POOL;
 
     p->current = p;
     p->large = NULL;
@@ -40,20 +40,20 @@ ngx_create_pool(size_t size)
 
 
 void
-ngx_destroy_pool(ngx_pool_t *pool)
+nmx_destroy_pool(nmx_pool_t *pool)
 {
-    ngx_pool_t          *p, *n;
-    ngx_pool_large_t    *l;
+    nmx_pool_t          *p, *n;
+    nmx_pool_large_t    *l;
 
     for (l = pool->large; l; l = l->next) {
 
         if (l->alloc) {
-            ngx_free(l->alloc);
+            nmx_free(l->alloc);
         }
     }
 
     for (p = pool, n = pool->d.next; /* void */; p = n, n = n->d.next) {
-        ngx_free(p);
+        nmx_free(p);
 
         if (n == NULL) {
             break;
@@ -63,19 +63,19 @@ ngx_destroy_pool(ngx_pool_t *pool)
 
 
 void
-ngx_reset_pool(ngx_pool_t *pool)
+nmx_reset_pool(nmx_pool_t *pool)
 {
-    ngx_pool_t        *p;
-    ngx_pool_large_t  *l;
+    nmx_pool_t        *p;
+    nmx_pool_large_t  *l;
 
     for (l = pool->large; l; l = l->next) {
         if (l->alloc) {
-            ngx_free(l->alloc);
+            nmx_free(l->alloc);
         }
     }
 
     for (p = pool; p; p = p->d.next) {
-        p->d.last = (u_char *) p + sizeof(ngx_pool_t);
+        p->d.last = (unsigned char *) p + sizeof(nmx_pool_t);
         p->d.failed = 0;
     }
 
@@ -85,17 +85,17 @@ ngx_reset_pool(ngx_pool_t *pool)
 
 
 void *
-ngx_palloc(ngx_pool_t *pool, size_t size)
+nmx_palloc(nmx_pool_t *pool, size_t size)
 {
-    u_char      *m;
-    ngx_pool_t  *p;
+    unsigned char      *m;
+    nmx_pool_t  *p;
 
     if (size <= pool->max) {
 
         p = pool->current;
 
         do {
-            m = ngx_align_ptr(p->d.last, NGX_POOL_ALIGNMENT);
+            m = nmx_align_ptr(p->d.last, NMX_POOL_ALIGNMENT);
 
             if ((size_t) (p->d.end - m) >= size) {
                 p->d.last = m + size;
@@ -107,18 +107,18 @@ ngx_palloc(ngx_pool_t *pool, size_t size)
 
         } while (p);
 
-        return ngx_palloc_block(pool, size);
+        return nmx_palloc_block(pool, size);
     }
 
-    return ngx_palloc_large(pool, size);
+    return nmx_palloc_large(pool, size);
 }
 
 
 void *
-ngx_pnalloc(ngx_pool_t *pool, size_t size)
+nmx_pnalloc(nmx_pool_t *pool, size_t size)
 {
     u_char      *m;
-    ngx_pool_t  *p;
+    nmx_pool_t  *p;
 
     if (size <= pool->max) {
 
@@ -137,35 +137,35 @@ ngx_pnalloc(ngx_pool_t *pool, size_t size)
 
         } while (p);
 
-        return ngx_palloc_block(pool, size);
+        return nmx_palloc_block(pool, size);
     }
 
-    return ngx_palloc_large(pool, size);
+    return nmx_palloc_large(pool, size);
 }
 
 
 static void *
-ngx_palloc_block(ngx_pool_t *pool, size_t size)
+nmx_palloc_block(nmx_pool_t *pool, size_t size)
 {
-    u_char      *m;
+    unsigned char      *m;
     size_t       psize;
-    ngx_pool_t  *p, *new;
+    nmx_pool_t  *p, *new;
 
-    psize = (size_t) (pool->d.end - (u_char *) pool);
+    psize = (size_t) (pool->d.end - (unsigned char *) pool);
 
-    m = ngx_memalign(NGX_POOL_ALIGNMENT, psize);
+    m = nmx_memalign(NMX_POOL_ALIGNMENT, psize);
     if (m == NULL) {
         return NULL;
     }
 
-    new = (ngx_pool_t *) m;
+    new = (nmx_pool_t *) m;
 
     new->d.end = m + psize;
     new->d.next = NULL;
     new->d.failed = 0;
 
-    m += sizeof(ngx_pool_data_t);
-    m = ngx_align_ptr(m, NGX_POOL_ALIGNMENT);
+    m += sizeof(nmx_pool_data_t);
+    m = nmx_align_ptr(m, NMX_POOL_ALIGNMENT);
     new->d.last = m + size;
 
     for (p = pool->current; p->d.next; p = p->d.next) {
@@ -181,13 +181,13 @@ ngx_palloc_block(ngx_pool_t *pool, size_t size)
 
 
 static void *
-ngx_palloc_large(ngx_pool_t *pool,size_t size)
+nmx_palloc_large(nmx_pool_t *pool,size_t size)
 {
     void              *p;
     int              n;
-    ngx_pool_large_t  *large;
+    nmx_pool_large_t  *large;
 
-    p = ngx_alloc(size);
+    p = nmx_alloc(size);
     if (p == NULL) {
         return NULL;
     }
@@ -205,9 +205,9 @@ ngx_palloc_large(ngx_pool_t *pool,size_t size)
         }
     }
 
-    large = ngx_palloc(pool, sizeof(ngx_pool_large_t));
+    large = nmx_palloc(pool, sizeof(nmx_pool_large_t));
     if (large == NULL) {
-        ngx_free(p);
+        nmx_free(p);
         return NULL;
     }
 
@@ -220,19 +220,19 @@ ngx_palloc_large(ngx_pool_t *pool,size_t size)
 
 
 void *
-ngx_pmemalign(ngx_pool_t *pool, size_t size, size_t alignment)
+nmx_pmemalign(nmx_pool_t *pool, size_t size, size_t alignment)
 {
     void              *p;
-    ngx_pool_large_t  *large;
+    nmx_pool_large_t  *large;
 
-    p = ngx_memalign(alignment, size);
+    p = nmx_memalign(alignment, size);
     if (p == NULL) {
         return NULL;
     }
 
-    large = ngx_palloc(pool, sizeof(ngx_pool_large_t));
+    large = nmx_palloc(pool, sizeof(nmx_pool_large_t));
     if (large == NULL) {
-        ngx_free(p);
+        nmx_free(p);
         return NULL;
     }
 
@@ -245,14 +245,14 @@ ngx_pmemalign(ngx_pool_t *pool, size_t size, size_t alignment)
 
 
 int
-ngx_pfree(ngx_pool_t *pool, void *p)
+nmx_pfree(nmx_pool_t *pool, void *p)
 {
-    ngx_pool_large_t  *l;
+    nmx_pool_large_t  *l;
 
     for (l = pool->large; l; l = l->next) {
         if (p == l->alloc) {
 
-            ngx_free(l->alloc);
+            nmx_free(l->alloc);
             l->alloc = NULL;
 
             return 1;
@@ -264,11 +264,11 @@ ngx_pfree(ngx_pool_t *pool, void *p)
 
 
 void *
-ngx_pcalloc(ngx_pool_t *pool, size_t size)
+nmx_pcalloc(nmx_pool_t *pool, size_t size)
 {
     void *p;
 
-    p = ngx_palloc(pool, size);
+    p = nmx_palloc(pool, size);
     if (p) {
         memset(p, 0,size);
     }
