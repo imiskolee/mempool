@@ -25,6 +25,16 @@ nmx_calloc(size_t size)
     return p;
 }
 
+void *nmx_realloc(void *p, size_t size){
+
+    if(p) {
+        return realloc (p, size);
+    }
+
+    return NULL;
+
+}
+
 void *
         nmx_memalign(size_t alignment, size_t size)
 {

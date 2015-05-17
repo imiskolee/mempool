@@ -50,6 +50,8 @@ void *nmx_palloc (nmx_pool_t *pool, size_t size);
 
 void *nmx_pnalloc (nmx_pool_t *pool, size_t size);
 
+void *nmx_prealloc (nmx_pool_t *pool, void *p, size_t size);
+
 void *nmx_pcalloc (nmx_pool_t *pool, size_t size);
 
 void *nmx_pmemalign (nmx_pool_t *pool, size_t size, size_t alignment);

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 void *nmx_alloc(size_t size);
 void *nmx_calloc(size_t size);
+void *nmx_realloc(void *p, size_t size);
 
 #define nmx_free          free
 

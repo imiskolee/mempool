@@ -110,6 +110,8 @@ nmx_palloc(nmx_pool_t *pool, size_t size)
         return nmx_palloc_block(pool, size);
     }
 
+
+
     return nmx_palloc_large(pool, size);
 }
 
@@ -117,8 +119,9 @@ nmx_palloc(nmx_pool_t *pool, size_t size)
 void *
 nmx_pnalloc(nmx_pool_t *pool, size_t size)
 {
-    u_char      *m;
+    unsigned char      *m;
     nmx_pool_t  *p;
+
 
     if (size <= pool->max) {
 
@@ -139,6 +142,7 @@ nmx_pnalloc(nmx_pool_t *pool, size_t size)
 
         return nmx_palloc_block(pool, size);
     }
+
 
     return nmx_palloc_large(pool, size);
 }
@@ -261,7 +265,6 @@ nmx_pfree(nmx_pool_t *pool, void *p)
 
     return 0;
 }
-
 
 void *
 nmx_pcalloc(nmx_pool_t *pool, size_t size)
