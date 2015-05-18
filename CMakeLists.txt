@@ -1,4 +1,6 @@
 project(nmx_mempool)
+SET(CMAKE_C_FLAGS_DEBUG  "-std=c99 -Wall -O0 -Wall -g -ggdb")
+SET(CMAKE_C_FLAGS_RELEASE "-std=c99 -Wall -Wno-unused-variable -Wunused-function -Wunused-label -Wuninitialized -O3 -Wall")
 
 AUX_SOURCE_DIRECTORY(./src/ SRCS)
 
